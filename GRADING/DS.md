@@ -1,7 +1,7 @@
-# DS — Отчёт «DevSecOps-сканы и харднинг»
+# DS - Отчёт «DevSecOps-сканы и харднинг»
 
-> Этот файл — **индивидуальный**. Его проверяют по **rubric_DS.md** (5 критериев × {0/1/2} → 0–10).
-> Подсказки помечены `TODO:` — удалите после заполнения.
+> Этот файл - **индивидуальный**. Его проверяют по **rubric_DS.md** (5 критериев × {0/1/2} → 0-10).
+> Подсказки помечены `TODO:` - удалите после заполнения.
 > Все доказательства/скрины кладите в **EVIDENCE/** и ссылайтесь на конкретные файлы/якоря.
 
 ---
@@ -10,14 +10,20 @@
 
 - **Проект (опционально BYO):** TODO: ссылка / «учебный шаблон»
 - **Версия (commit/date):** TODO: abc123 / YYYY-MM-DD
-- **Кратко (1–2 предложения):** TODO: что сканируется и какие меры харднинга планируются
+- **Кратко (1-2 предложения):** TODO: что сканируется и какие меры харднинга планируются
 
 ---
 
 ## 1) SBOM и уязвимости зависимостей (DS1)
 
 - **Инструмент/формат:** TODO: Syft/Grype/OSV; CycloneDX/SPDX
-- **Как запускал:** ТУТ НУЖНА ТВОЯ ВСТАВКА
+- **Как запускал:**
+
+  ```bash
+  syft dir:. -o cyclonedx-json > EVIDENCE/sbom-YYYY-MM-DD.json
+  grype sbom:EVIDENCE/sbom-YYYY-MM-DD.json --fail-on high -o json > EVIDENCE/deps-YYYY-MM-DD.json
+  ```
+
 - **Отчёты:** `EVIDENCE/sbom-YYYY-MM-DD.json`, `EVIDENCE/deps-YYYY-MM-DD.json`
 - **Выводы (кратко):** TODO: сколько Critical/High, ключевые пакеты/лицензии
 - **Действия:** TODO: что исправлено/обновлено **или** что временно подавлено (ниже в триаже)
@@ -29,15 +35,26 @@
 
 ### 2.1 SAST
 
-- **Инструмент/профиль:** TODO
-- **Как запускал:** ТУТ НУЖНА ТВОЯ ВСТАВКА
+- **Инструмент/профиль:** TODO: semgrep?
+- **Как запускал:**
+
+  ```bash
+  semgrep --config p/ci --severity=high --error --json --output EVIDENCE/sast-YYYY-MM-DD.json
+  ```
+
 - **Отчёт:** `EVIDENCE/sast-YYYY-MM-DD.*`
-- **Выводы:** TODO: 1–2 ключевых находки (TP/FP), области риска
+- **Выводы:** TODO: 1-2 ключевых находки (TP/FP), области риска
 
 ### 2.2 Secrets scanning
 
-- **Инструмент:** TODO
-- **Как запускал:** ТУТ НУЖНА ТВОЯ ВСТАВКА
+- **Инструмент:** TODO: gitleaks?
+- **Как запускал:**
+
+  ```bash
+  gitleaks detect --no-git --report-format json --report-path EVIDENCE/secrets-YYYY-MM-DD.json
+  gitleaks detect --log-opts="--all" --report-format json --report-path EVIDENCE/secrets-YYYY-MM-DD-history.json
+  ```
+
 - **Отчёт:** `EVIDENCE/secrets-YYYY-MM-DD.*`
 - **Выводы:** TODO: есть ли истинные срабатывания; меры (ревок/ротация/очистка истории)
 
@@ -45,19 +62,32 @@
 
 ## 3) DAST **или** Policy (Container/IaC) (DS3)
 
-> Для «1» достаточно одного из классов; на «2» — желательно оба **или** один глубже (настроенный профиль/таргет).
+> Для «1» достаточно одного из классов; на «2» - желательно оба **или** один глубже (настроенный профиль/таргет).
 
-### Вариант A — DAST (лайт)
+### Вариант A - DAST (лайт)
 
 - **Инструмент/таргет:** TODO (локальный стенд/демо-контейнер допустим)
-- **Как запускал:** ТУТ НУЖНА ТВОЯ ВСТАВКА
-- **Отчёт:** `EVIDENCE/dast-YYYY-MM-DD.pdf#alert-...`
-- **Выводы:** TODO: 1–2 meaningful наблюдения
+- **Как запускал:**
 
-### Вариант B — Policy / Container / IaC
+  ```bash
+  zap-baseline.py -t http://127.0.0.1:8080 -m 3 \
+    -r EVIDENCE/dast-YYYY-MM-DD.html -J EVIDENCE/dast-YYYY-MM-DD.json
+  ```
+
+- **Отчёт:** `EVIDENCE/dast-YYYY-MM-DD.pdf#alert-...`
+- **Выводы:** TODO: 1-2 meaningful наблюдения
+
+### Вариант B - Policy / Container / IaC
 
 - **Инструмент(ы):** TODO (trivy config / checkov / conftest и т.п.)
-- **Как запускал:** ТУТ НУЖНА ТВОЯ ВСТАВКА
+- **Как запускал:**
+
+  ```bash
+  trivy image --severity HIGH,CRITICAL --exit-code 1 <image:tag> > EVIDENCE/policy-YYYY-MM-DD.txt
+  trivy config . --severity HIGH,CRITICAL --exit-code 1 --format table > EVIDENCE/trivy-YYYY-MM-DD.txt
+  checkov -d . -o cli > EVIDENCE/checkov-YYYY-MM-DD.txt
+  ```
+
 - **Отчёт(ы):** `EVIDENCE/policy-YYYY-MM-DD.txt`, `EVIDENCE/trivy-YYYY-MM-DD.txt`, …
 - **Выводы:** TODO: какие правила нарушены/исправлены
 
@@ -75,7 +105,7 @@
 - [ ] **AuthZ / RLS / tenant isolation** → Evidence: `EVIDENCE/rls-policy.txt`
 - [ ] **Container/IaC best-practice** (минимальная база, readonly fs, …) → Evidence: `EVIDENCE/trivy-YYYY-MM-DD.txt#cfg`
 
-> Для «1» достаточно ≥2 уместных мер с доказательствами; для «2» — ≥3 и хотя бы по одной показать эффект «до/после».
+> Для «1» достаточно ≥2 уместных мер с доказательствами; для «2» - ≥3 и хотя бы по одной показать эффект «до/после».
 
 ---
 
@@ -85,8 +115,22 @@
   Примеры: «SCA: Critical=0; High≤1», «SAST: Critical=0», «Secrets: 0 истинных находок», «Policy: Violations=0».
 - **Как проверяются:**  
   - Ручной просмотр (какие файлы/строки) **или**  
-  - Автоматически: ТУТ НУЖНА ТВОЯ ВСТАВКА (скрипт/job, условие fail при нарушении)
-- **Ссылки на конфиг/скрипт (если есть):** ТУТ НУЖНА ТВОЯ ВСТАВКА
+  - Автоматически:  (скрипт/job, условие fail при нарушении)
+
+    ```bash
+    SCA: grype ... --fail-on high
+    SAST: semgrep --config p/ci --severity=high --error
+    Secrets: gitleaks detect --exit-code 1
+    Policy/IaC: trivy (image|config) --severity HIGH,CRITICAL --exit-code 1
+    DAST: zap-baseline.py -m 3 (фейл при High)
+    ```
+
+- **Ссылки на конфиг/скрипт (если есть):**
+
+  ```bash
+  GitHub Actions: .github/workflows/security.yml (jobs: sca, sast, secrets, policy, dast)
+  или GitLab CI: .gitlab-ci.yml (stages: security; jobs: sca/sast/secrets/policy/dast)
+  ```
 
 ---
 
@@ -94,7 +138,7 @@
 
 | ID/Anchor       | Класс     | Severity | Статус     | Действие | Evidence                               | Ссылка на фикс/исключение         | Комментарий / owner / expiry |
 |-----------------|-----------|----------|------------|----------|----------------------------------------|-----------------------------------|------------------------------|
-| CVE-2024-XXXX   | SCA       | High     | fixed      | bump     | `EVIDENCE/deps-YYYY-MM-DD.json#CVE`    | `commit abc123`                   | —                            |
+| CVE-2024-XXXX   | SCA       | High     | fixed      | bump     | `EVIDENCE/deps-YYYY-MM-DD.json#CVE`    | `commit abc123`                   | -                            |
 | ZAP-123         | DAST      | Medium   | suppressed | ignore   | `EVIDENCE/dast-YYYY-MM-DD.pdf#123`     | `EVIDENCE/suppressions.yml#zap`   | FP; owner: ФИО; expiry: 2025-12-31 |
 | SAST-77         | SAST      | High     | open       | backlog  | `EVIDENCE/sast-YYYY-MM-DD.*#77`        | issue-link                        | план фикса в релизе N        |
 
@@ -122,7 +166,7 @@
 
 ## 9) Out-of-Scope
 
-- TODO: что сознательно не сканировалось сейчас и почему (1–3 пункта)
+- TODO: что сознательно не сканировалось сейчас и почему (1-3 пункта)
 
 ---
 
